@@ -1,5 +1,4 @@
-import { dbDialects } from "./Schema.ts";
-import { columnTypes } from "./TypeUtils.ts";
+import { columnTypes, dbDialects } from "./TypeUtils.ts";
 
 /** The column class which stores the column information of a table class. */
 export class Column {
@@ -12,6 +11,8 @@ export class Column {
   private defaultValue?: string;
   private customCol?: string;
   private isAutoIncrement: boolean = false;
+  private isPrimary: boolean = false;
+  private isUnique: boolean = false;
 
   constructor(
     name: string,
@@ -39,9 +40,9 @@ export class Column {
   /** Helper method for adding attributes to the column string */
   private _addAttributes(string: string): string {
     if (this.columnInput1 !== undefined) {
-      string += ` (${this.columnInput1}${this.columnInput2
-        ? `, ${this.columnInput2}`
-        : ""})`;
+      string += ` (${this.columnInput1}${
+        this.columnInput2 ? `, ${this.columnInput2}` : ""
+      })`;
     }
 
     if (this.defaultValue) {
@@ -56,11 +57,29 @@ export class Column {
       string += " AUTO_INCREMENT";
     }
 
+    if (this.isPrimary) {
+      string += " PRIMARY KEY";
+    }
+
+    if (this.isUnique) {
+      string += " UNIQUE";
+    }
+
     if (this.customCol) {
       string += ` ${this.customCol}`;
     }
 
     return string;
+  }
+
+  /** Adds primary key to the column string */
+  primary() {
+    this.isPrimary = true;
+  }
+
+  /** Adds unique constraint to the column string */
+  unique() {
+    this.isUnique = true;
   }
 
   /** Adds custom attributes to the column string */

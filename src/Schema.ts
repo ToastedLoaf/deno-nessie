@@ -1,6 +1,5 @@
 import { Table } from "./Table.ts";
-
-export type dbDialects = "pg" | "mysql" | "sqlite";
+import { dbDialects } from "./TypeUtils.ts";
 
 /** The schema class exposed in the `up()` and `down()` methods in the migration files.
  * 
@@ -8,14 +7,18 @@ export type dbDialects = "pg" | "mysql" | "sqlite";
  */
 export class Schema {
   query: string = "";
+  dialect: dbDialects;
+
+  constructor(dialenct: dbDialects = "pg") {
+    this.dialect = dialenct;
+  }
 
   /** Method for exposing a Table instance for creating a table with columns */
   create(
     name: string,
     createfn: (table: Table) => void,
-    dialect: dbDialects = "pg",
   ): string {
-    const table = new Table(name, dialect);
+    const table = new Table(name, this.dialect);
 
     createfn(table);
 
@@ -39,9 +42,11 @@ export class Schema {
   ) {
     if (typeof name === "string") name = [name];
 
-    const sql = `DROP TABLE${ifExists ? " IF EXISTS" : ""} ${name.join(
-      ", ",
-    )}${cascade ? " CASCADE" : ""};`;
+    const sql = `DROP TABLE${ifExists ? " IF EXISTS" : ""} ${
+      name.join(
+        ", ",
+      )
+    }${cascade ? " CASCADE" : ""};`;
 
     this.query += sql;
 
@@ -49,8 +54,17 @@ export class Schema {
   }
 
   /** Generates a string for checking if a table exists */
-  static hasTable(name: string) {
-    return `SELECT to_regclass('${name}');`;
+  hasTable(name: string) {
+    switch (this.dialect) {
+      case "mysql":
+        //SELECT 1 FROM testtable LIMIT 1;
+        return `show tables like '${name}';`;
+      case "sqlite":
+        return `SELECT name FROM sqlite_master WHERE type='table' AND name='${name}';`;
+      case "pg":
+      default:
+        return `SELECT to_regclass('${name}');`;
+    }
   }
 }
 

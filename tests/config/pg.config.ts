@@ -1,5 +1,5 @@
 export default {
-  "migrationFolder": "./migrations",
+  "migrationFolder": "./tests/migrations",
   "connection": {
     "database": "nessie",
     "hostname": "localhost",

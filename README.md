@@ -1,61 +1,49 @@
-# Nessie
-
 ![ci](https://github.com/halvardssm/deno-nessie/workflows/ci/badge.svg)
 [![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https/deno.land/x/nessie/mod.ts)
+[![(Deno)](https://img.shields.io/badge/deno-1.0.0-green.svg)](https://deno.land)
+
+# Nessie
+
+<p align="center"><img src="./.github/logo.png" alt="Nessie logo" width="200" height="200"></p>
 
 A database migration tool for [deno](https://deno.land) inspired by [Laravel](https://github.com/laravel/laravel). Supports PostgreSQL and  MySQL, soon: SQLite. See [documentation](https://doc.deno.land/https/deno.land/x/nessie/mod.ts).
 
-## Status / Roadmap
-
-* Currently the cli can be used to create a migration file and to perform simple migrations and rollbacks
-* By using `Schema` you can generate a sql string which you can use to modify your database
-
-* [x] CLI communicates with db and tracks migrations using a table
-* [x] CLI can rollback a migration
-* [x] Rework the codebase to have a cleaner interface and chained opperations
-* [x] Add support for env or settings file
-* [x] Add tests
-* [ ] CLI can migrate and rollback multiple files (currently only migrate multiple files)
-* [ ] Add support for seed files
-* [ ] Add support for soft deletes
-* [ ] Add rename method for table
-* [ ] Add rename method for column
-* [ ] Add drop method for column
-* [ ] Add unsigned method for integers
-* [ ] Add alter method for schema
-* [ ] Add support for foreign key contraints
-* [ ] Add integration test with databases
-
 ## Supported databases
 
-* [x] PostgreSQL - in beta
-* [x] MySQL - in alpha
-* [ ] SQLite - not started
+* [x] PostgreSQL
+* [x] MySQL - Currently it works with password for 5.*, but for >=8 you have to send a blank password, see [Deno MySQL](https://deno.land/x/mysql/) for version support
+* [x] SQLite
 
 If you have a database system you would like to see in this list, feel free to make an issue or create a pr with your implementation.
 
 ## Usage
 
-* `make`: Create migration
+* `init`: Generates a `nessie.config.ts` file
 
-```deno run --allow-read --allow-write https://deno.land/x/nessie/cli.ts make create_users -p migrations```
+  ```deno run --allow-net --allow-read --allow-write https://deno.land/x/nessie/cli.ts init```
 
-* `migrate`: Run migration - will migrate all migrations in your migration folder newer than the latest migration in your db
+* `make [name]`: Create migration
 
-```deno run --allow-net --allow-read https://deno.land/x/nessie/cli.ts migrate -p migrations -c postgres://root:pwd@localhost:5000/nessie```
+  ```deno run --allow-net --allow-read --allow-write https://deno.land/x/nessie/cli.ts make create_users```
+
+* `migrate`: Run migration - will migrate all migrations in your migration folder (sorted by timestamp) newer than the latest migration in your db
+
+  ```deno run --allow-net --allow-read https://deno.land/x/nessie/cli.ts migrate```
+
+  ```deno run --allow-net --allow-read https://deno.land/x/nessie/cli.ts migrate -c ./nessie.config.ts```
 
 * `rollback`: Rollback - will rollback the latest migration
 
-```deno run --allow-net --allow-read https://deno.land/x/nessie/cli.ts migrate -p migrations -c postgres://root:pwd@localhost:5000/nessie```
+  ```deno run --allow-net --allow-read https://deno.land/x/nessie/cli.ts rollback```
 
 ### Flags
 
-* `-p, --path`: path to migration folder
-* `-c, --connection`: db connection url
+* `-c, --config`: Path to config file, will default to ./nessie.config.ts
+* `-d, --debug`: Enables verbose output
 
 ## Contributing
 
-Feel free to make pr's or create an issue!
+All contributions are welcome, make sure to read the [contributing guideline](./.github/CONTRIBUTING.md).
 
 ## Uses
 
@@ -66,21 +54,21 @@ Feel free to make pr's or create an issue!
 
 ## Examples
 
-`nessie.config.json`
+`nessie.config.ts`
 
 ```ts
 import { nessieConfigType } from "https://deno.land/x/nessie/mod.ts";
 
 const config: nessieConfigType = {
   migrationFolder: "./migrations",
-  connection: {
+  connection: { // These are the connection option from their respective db clients, will differ
     host: "localhost",
     port: 5432,
     user: "root",
     password: "pwd",
     name: "nessie",
-    dialect: "pg",
   },
+  dialect: "pg",
 };
 
 export default config;
@@ -91,8 +79,8 @@ Minimal example of a migration file
 ```ts
 import { Schema } from "https://deno.land/x/nessie/mod.ts";
 
-export const up = (scema: Schema): void => {
-  scema.create("users", (table) => {
+export const up = (schema: Schema): void => {
+  schema.create("users", (table) => {
     table.id();
     table.string("name", 100).nullable();
     table.boolean("is_true").default("false");
@@ -100,7 +88,7 @@ export const up = (scema: Schema): void => {
     table.timestamps();
   });
 
-  scema.queryString(
+  schema.queryString(
     "INSERT INTO users VALUES (DEFAULT, 'Deno', true, 2, DEFAULT, DEFAULT);",
   );
 };
@@ -110,7 +98,4 @@ export const down = (schema: Schema): void => {
 };
 ```
 
-See example folder for more (in development)
-
-### Column types
-* 
+See example folder for more
