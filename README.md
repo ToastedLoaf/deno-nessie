@@ -88,11 +88,13 @@ export default config;
 Minimal example of a migration file
 
 ```ts
-export const up = (): string => {
+import { Migration } from "https://deno.land/x/nessie/mod.ts";
+
+export const up: Migration = () => {
   return "CREATE TABLE table1 (id int);";
 };
 
-export const down = (): string => {
+export const down: Migration = () => {
   return "DROP TABLE table1";
 };
 ```
@@ -100,12 +102,13 @@ export const down = (): string => {
 Using the native query builder
 
 ```ts
+import { Migration } from "https://deno.land/x/nessie/mod.ts";
 import { Schema, dbDialects } from "https://deno.land/x/nessie/qb.ts";
 
 const dialect: dbDialects = "mysql"
 
-export const up = (): string => {
-  let query = new Schema(dialect).create("users", (table) => {
+export const up: Migration = () => {
+  const queryArray: string[] = new Schema(dialect).create("users", (table) => {
     table.id();
     table.string("name", 100).nullable();
     table.boolean("is_true").default("false");
@@ -113,19 +116,21 @@ export const up = (): string => {
     table.timestamps();
   });
 
-  query += new Schema(dialect).queryString(
+  const queryString = new Schema(dialect).queryString(
     "INSERT INTO users VALUES (DEFAULT, 'Deno', true, 2, DEFAULT, DEFAULT);",
-  );
+  )
+  
+  queryArray.push(queryString);
 
-  return query
+  return queryArray
 };
 
-export const down = (schema: Schema): void => {
+export const down: Migration = () => {
   return new Schema(dialect).drop("users");
 };
 ```
 
-See example folder for more
+See the [example folder](./examples) for more
 
 ## How to make a client
 
